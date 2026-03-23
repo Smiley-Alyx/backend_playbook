@@ -15,6 +15,11 @@ final readonly class DoctrineTransactionManager implements TransactionManager
 
     public function transactional(callable $operation): mixed
     {
-        return $this->em->wrapInTransaction($operation);
+        return $this->em->wrapInTransaction(function () use ($operation): mixed {
+            $result = $operation();
+            $this->em->flush();
+
+            return $result;
+        });
     }
 }
