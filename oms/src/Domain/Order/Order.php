@@ -15,7 +15,7 @@ final class Order
 
     private function __construct(
         private readonly OrderId $id,
-        private readonly int $amount,
+        private readonly int $amountMinor,
         private readonly string $currency,
         private readonly DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
@@ -27,10 +27,12 @@ final class Order
 
     public static function create(OrderId $id, int $amount, string $currency, DateTimeImmutable $now): self
     {
+        $normalizedCurrency = strtoupper(trim($currency));
+
         return new self(
             id: $id,
-            amount: $amount,
-            currency: $currency,
+            amountMinor: $amount,
+            currency: $normalizedCurrency,
             createdAt: $now,
             updatedAt: $now,
         );
@@ -46,9 +48,9 @@ final class Order
         return $this->status;
     }
 
-    public function amount(): int
+    public function amountMinor(): int
     {
-        return $this->amount;
+        return $this->amountMinor;
     }
 
     public function currency(): string
@@ -100,8 +102,8 @@ final class Order
 
     private function assertInvariants(): void
     {
-        if ($this->amount <= 0) {
-            throw new InvalidOrderAmount($this->amount);
+        if ($this->amountMinor <= 0) {
+            throw new InvalidOrderAmount($this->amountMinor);
         }
 
         $currency = strtoupper(trim($this->currency));
