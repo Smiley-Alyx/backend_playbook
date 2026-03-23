@@ -17,10 +17,12 @@ use App\Application\UseCase\ListOrders\ListOrdersRequest;
 use App\Application\UseCase\RefundOrder\RefundOrder;
 use App\Application\UseCase\RefundOrder\RefundOrderRequest;
 use DateTimeImmutable;
+use JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -75,13 +77,35 @@ final readonly class OrdersController
         $perPage = (int) $request->query->get('per_page', 20);
         $status = $request->query->get('status');
 
+        $violations = $this->validator->validate([
+            'page' => $page,
+            'per_page' => $perPage,
+        ], new Assert\Collection([
+            'page' => [new Assert\Required(), new Assert\Type('integer'), new Assert\Positive()],
+            'per_page' => [new Assert\Required(), new Assert\Type('integer'), new Assert\Range(['min' => 1, 'max' => 100])],
+        ], allowExtraFields: true));
+
+        if ($violations->count() > 0) {
+            return $this->validationError($violations);
+        }
+
         $result = $this->listOrders->execute(new ListOrdersRequest(
             page: $page,
             perPage: $perPage,
             status: is_string($status) ? $status : null,
         ));
 
-        return new JsonResponse(['data' => $result->result], Response::HTTP_OK);
+        $totalPages = (int) ceil($result->result->total / $result->result->perPage);
+
+        return new JsonResponse([
+            'data' => $result->result->items,
+            'meta' => [
+                'page' => $result->result->page,
+                'per_page' => $result->result->perPage,
+                'total' => $result->result->total,
+                'total_pages' => max(1, $totalPages),
+            ],
+        ], Response::HTTP_OK);
     }
 
     #[Route('/orders/{id}/confirm-payment', name: 'orders_confirm_payment', methods: ['POST'])]
@@ -125,9 +149,17 @@ final readonly class OrdersController
             return [];
         }
 
-        $decoded = json_decode($raw, true);
+        try {
+            $decoded = json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw new BadRequestHttpException('Invalid JSON');
+        }
 
-        return is_array($decoded) ? $decoded : [];
+        if (!is_array($decoded)) {
+            throw new BadRequestHttpException('Invalid JSON');
+        }
+
+        return $decoded;
     }
 
     private function validationError($violations): JsonResponse

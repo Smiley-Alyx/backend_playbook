@@ -6,10 +6,12 @@ namespace App\Interfaces\Http\EventSubscriber;
 
 use App\Application\Exception\OrderNotFound;
 use App\Domain\Order\Exception\InvalidOrderTransition;
+use Ramsey\Uuid\Exception\InvalidUuidStringException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 final class ApiExceptionSubscriber implements EventSubscriberInterface
@@ -38,6 +40,14 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
             $status = Response::HTTP_CONFLICT;
             $code = 'INVALID_ORDER_TRANSITION';
             $message = $e->getMessage();
+        } elseif ($e instanceof InvalidUuidStringException) {
+            $status = Response::HTTP_BAD_REQUEST;
+            $code = 'INVALID_ID';
+            $message = 'Invalid id';
+        } elseif ($e instanceof HttpExceptionInterface) {
+            $status = $e->getStatusCode();
+            $code = 'HTTP_ERROR';
+            $message = $e->getMessage() !== '' ? $e->getMessage() : Response::$statusTexts[$status] ?? 'HTTP error';
         }
 
         $payload = [
