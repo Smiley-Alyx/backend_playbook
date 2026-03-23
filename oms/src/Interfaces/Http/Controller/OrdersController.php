@@ -16,6 +16,7 @@ use App\Application\UseCase\ListOrders\ListOrders;
 use App\Application\UseCase\ListOrders\ListOrdersRequest;
 use App\Application\UseCase\RefundOrder\RefundOrder;
 use App\Application\UseCase\RefundOrder\RefundOrderRequest;
+use App\Interfaces\Http\Exception\ValidationFailedHttpException;
 use DateTimeImmutable;
 use JsonException;
 use OpenApi\Attributes as OA;
@@ -90,7 +91,7 @@ final readonly class OrdersController
         ], allowExtraFields: true));
 
         if ($violations->count() > 0) {
-            return $this->validationError($violations);
+            $this->validationError($violations);
         }
 
         $result = $this->createOrder->execute(new CreateOrderRequest(
@@ -194,7 +195,7 @@ final readonly class OrdersController
         ], allowExtraFields: true));
 
         if ($violations->count() > 0) {
-            return $this->validationError($violations);
+            $this->validationError($violations);
         }
 
         $result = $this->listOrders->execute(new ListOrdersRequest(
@@ -312,7 +313,7 @@ final readonly class OrdersController
         return $decoded;
     }
 
-    private function validationError($violations): JsonResponse
+    private function validationError($violations): void
     {
         $errors = [];
 
@@ -323,12 +324,6 @@ final readonly class OrdersController
             ];
         }
 
-        return new JsonResponse([
-            'error' => [
-                'code' => 'VALIDATION_FAILED',
-                'message' => 'Validation failed',
-                'details' => $errors,
-            ],
-        ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        throw new ValidationFailedHttpException($errors);
     }
 }

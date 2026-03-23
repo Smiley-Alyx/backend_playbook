@@ -8,6 +8,7 @@ use App\Application\Exception\OrderNotFound;
 use App\Domain\Order\Exception\InvalidOrderAmount;
 use App\Domain\Order\Exception\InvalidOrderCurrency;
 use App\Domain\Order\Exception\InvalidOrderTransition;
+use App\Interfaces\Http\Exception\ValidationFailedHttpException;
 use Ramsey\Uuid\Exception\InvalidUuidStringException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -38,6 +39,7 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
         $status = Response::HTTP_INTERNAL_SERVER_ERROR;
         $code = 'INTERNAL_ERROR';
         $message = 'Internal error';
+        $details = null;
 
         if ($e instanceof OrderNotFound) {
             $status = Response::HTTP_NOT_FOUND;
@@ -59,6 +61,11 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
             $status = Response::HTTP_BAD_REQUEST;
             $code = 'INVALID_ID';
             $message = 'Invalid id';
+        } elseif ($e instanceof ValidationFailedHttpException) {
+            $status = Response::HTTP_UNPROCESSABLE_ENTITY;
+            $code = 'VALIDATION_FAILED';
+            $message = $e->getMessage();
+            $details = $e->details();
         } elseif ($e instanceof HttpExceptionInterface) {
             $status = $e->getStatusCode();
             $code = 'HTTP_ERROR';
@@ -77,6 +84,10 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
                 'request_id' => is_string($requestId) ? $requestId : null,
             ],
         ];
+
+        if (is_array($details)) {
+            $payload['error']['details'] = $details;
+        }
 
         $event->setResponse(new JsonResponse($payload, $status));
     }
