@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Interfaces\Http\EventSubscriber;
 
 use App\Application\Exception\OrderNotFound;
+use App\Domain\Order\Exception\InvalidOrderAmount;
+use App\Domain\Order\Exception\InvalidOrderCurrency;
 use App\Domain\Order\Exception\InvalidOrderTransition;
 use Ramsey\Uuid\Exception\InvalidUuidStringException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -35,6 +37,14 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
         if ($e instanceof OrderNotFound) {
             $status = Response::HTTP_NOT_FOUND;
             $code = 'ORDER_NOT_FOUND';
+            $message = $e->getMessage();
+        } elseif ($e instanceof InvalidOrderAmount) {
+            $status = Response::HTTP_UNPROCESSABLE_ENTITY;
+            $code = 'INVALID_ORDER_AMOUNT';
+            $message = $e->getMessage();
+        } elseif ($e instanceof InvalidOrderCurrency) {
+            $status = Response::HTTP_UNPROCESSABLE_ENTITY;
+            $code = 'INVALID_ORDER_CURRENCY';
             $message = $e->getMessage();
         } elseif ($e instanceof InvalidOrderTransition) {
             $status = Response::HTTP_CONFLICT;
