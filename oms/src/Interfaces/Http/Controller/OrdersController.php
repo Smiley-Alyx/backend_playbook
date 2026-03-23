@@ -318,12 +318,30 @@ final readonly class OrdersController
         $errors = [];
 
         foreach ($violations as $violation) {
+            $field = $this->normalizeViolationPath((string) $violation->getPropertyPath());
+
             $errors[] = [
-                'field' => (string) $violation->getPropertyPath(),
+                'field' => $field,
                 'message' => (string) $violation->getMessage(),
             ];
         }
 
         throw new ValidationFailedHttpException($errors);
+    }
+
+    private function normalizeViolationPath(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return $path;
+        }
+
+        if (str_starts_with($path, '[') && str_ends_with($path, ']')) {
+            $path = substr($path, 1, -1);
+            $path = str_replace('][', '.', $path);
+            $path = trim($path);
+        }
+
+        return $path;
     }
 }
