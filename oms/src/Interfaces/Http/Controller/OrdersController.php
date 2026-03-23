@@ -77,8 +77,16 @@ final readonly class OrdersController
                     ],
                 ),
             ),
-            new OA\Response(response: 400, description: 'Invalid JSON'),
-            new OA\Response(response: 422, description: 'Validation failed'),
+            new OA\Response(
+                response: 400,
+                description: 'Invalid JSON',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ErrorResponse::class),
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation failed',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ValidationErrorResponse::class),
+            ),
         ],
     )]
     public function create(Request $request): JsonResponse
@@ -132,8 +140,16 @@ final readonly class OrdersController
                     ],
                 ),
             ),
-            new OA\Response(response: 400, description: 'Invalid id'),
-            new OA\Response(response: 404, description: 'Not found'),
+            new OA\Response(
+                response: 400,
+                description: 'Invalid id',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ErrorResponse::class),
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Not found',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ErrorResponse::class),
+            ),
         ],
     )]
     public function get(string $id): JsonResponse
@@ -177,7 +193,11 @@ final readonly class OrdersController
                     ],
                 ),
             ),
-            new OA\Response(response: 422, description: 'Validation failed'),
+            new OA\Response(
+                response: 422,
+                description: 'Validation failed',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ValidationErrorResponse::class),
+            ),
         ],
     )]
     public function list(Request $request): JsonResponse
@@ -228,8 +248,16 @@ final readonly class OrdersController
         ],
         responses: [
             new OA\Response(response: 200, description: 'OK'),
-            new OA\Response(response: 404, description: 'Not found'),
-            new OA\Response(response: 409, description: 'Invalid transition or idempotency conflict'),
+            new OA\Response(
+                response: 404,
+                description: 'Not found',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ErrorResponse::class),
+            ),
+            new OA\Response(
+                response: 409,
+                description: 'Invalid transition or idempotency conflict',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ErrorResponse::class),
+            ),
         ],
     )]
     public function confirmPayment(string $id): JsonResponse
@@ -253,8 +281,16 @@ final readonly class OrdersController
         ],
         responses: [
             new OA\Response(response: 200, description: 'OK'),
-            new OA\Response(response: 404, description: 'Not found'),
-            new OA\Response(response: 409, description: 'Invalid transition or idempotency conflict'),
+            new OA\Response(
+                response: 404,
+                description: 'Not found',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ErrorResponse::class),
+            ),
+            new OA\Response(
+                response: 409,
+                description: 'Invalid transition or idempotency conflict',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ErrorResponse::class),
+            ),
         ],
     )]
     public function cancel(string $id): JsonResponse
@@ -278,8 +314,16 @@ final readonly class OrdersController
         ],
         responses: [
             new OA\Response(response: 200, description: 'OK'),
-            new OA\Response(response: 404, description: 'Not found'),
-            new OA\Response(response: 409, description: 'Invalid transition or idempotency conflict'),
+            new OA\Response(
+                response: 404,
+                description: 'Not found',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ErrorResponse::class),
+            ),
+            new OA\Response(
+                response: 409,
+                description: 'Invalid transition or idempotency conflict',
+                content: new OA\JsonContent(ref: \App\Interfaces\Http\OpenApi\ErrorResponse::class),
+            ),
         ],
     )]
     public function refund(string $id): JsonResponse
