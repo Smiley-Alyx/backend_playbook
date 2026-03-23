@@ -17,10 +17,11 @@ final class Order
         private readonly OrderId $id,
         private readonly int $amountMinor,
         private readonly string $currency,
+        OrderStatus $status,
         private readonly DateTimeImmutable $createdAt,
         private DateTimeImmutable $updatedAt,
     ) {
-        $this->status = OrderStatus::Created;
+        $this->status = $status;
 
         $this->assertInvariants();
     }
@@ -33,8 +34,29 @@ final class Order
             id: $id,
             amountMinor: $amount,
             currency: $normalizedCurrency,
+            status: OrderStatus::Created,
             createdAt: $now,
             updatedAt: $now,
+        );
+    }
+
+    public static function reconstitute(
+        OrderId $id,
+        int $amountMinor,
+        string $currency,
+        OrderStatus $status,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt,
+    ): self {
+        $normalizedCurrency = strtoupper(trim($currency));
+
+        return new self(
+            id: $id,
+            amountMinor: $amountMinor,
+            currency: $normalizedCurrency,
+            status: $status,
+            createdAt: $createdAt,
+            updatedAt: $updatedAt,
         );
     }
 

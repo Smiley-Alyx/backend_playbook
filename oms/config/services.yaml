@@ -20,5 +20,9 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\Application\Contract\OrderRepository: '@App\Infrastructure\Persistence\Doctrine\DoctrineOrderRepository'
+    App\Application\Contract\OrderQueryRepository: '@App\Infrastructure\Persistence\Doctrine\DoctrineOrderQueryRepository'
+    App\Application\Contract\TransactionManager: '@App\Infrastructure\Persistence\Doctrine\DoctrineTransactionManager'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
