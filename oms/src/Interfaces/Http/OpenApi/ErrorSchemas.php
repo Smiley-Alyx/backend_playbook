@@ -14,6 +14,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'code', type: 'string', example: 'VALIDATION_FAILED'),
         new OA\Property(property: 'message', type: 'string', example: 'Validation failed'),
         new OA\Property(property: 'request_id', type: 'string', example: '019d1b78-ac5c-7159-b07f-8815b196a79d'),
+        new OA\Property(property: 'details', type: 'object', nullable: true, additionalProperties: true),
     ],
 )]
 final class ErrorObject
