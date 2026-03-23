@@ -1,0 +1,14 @@
+.DS_Store
+.idea/
+.vscode/
+
+**/vendor/
+**/.phpunit.result.cache
+
+**/var/
+**/.env
+**/.env.*
+!**/.env.dist
+
+**/.docker/
+**/docker-data/
