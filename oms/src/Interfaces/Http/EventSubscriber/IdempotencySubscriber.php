@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Interfaces\Http\EventSubscriber;
 
 use Psr\Cache\CacheItemPoolInterface;
-use Redis;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,14 +25,14 @@ final class IdempotencySubscriber implements EventSubscriberInterface
 
     public function __construct(
         private readonly CacheItemPoolInterface $idempotencyCache,
-        private readonly Redis $redis,
+        private readonly \Redis $redis,
     ) {
     }
 
     public static function getSubscribedEvents(): array
     {
         return [
-            KernelEvents::REQUEST => ['onRequest', 50],
+            KernelEvents::REQUEST => ['onRequest', 20],
             KernelEvents::RESPONSE => ['onResponse', -50],
             KernelEvents::EXCEPTION => ['onException', -50],
         ];
@@ -47,7 +46,9 @@ final class IdempotencySubscriber implements EventSubscriberInterface
 
         $request = $event->getRequest();
 
-        if (!$this->isCreateOrderRequest($request)) {
+        $scope = $this->scope($request);
+
+        if ($scope === null) {
             return;
         }
 
@@ -60,7 +61,7 @@ final class IdempotencySubscriber implements EventSubscriberInterface
         $rawBody = (string) $request->getContent();
         $bodyHash = hash('sha256', $rawBody);
 
-        $cacheKey = $this->responseCacheKey($key);
+        $cacheKey = $this->responseCacheKey($scope, $key);
         $item = $this->idempotencyCache->getItem($cacheKey);
 
         if ($item->isHit()) {
@@ -100,7 +101,7 @@ final class IdempotencySubscriber implements EventSubscriberInterface
             return;
         }
 
-        $lockKey = $this->lockKey($key);
+        $lockKey = $this->lockKey($scope, $key);
         $token = bin2hex(random_bytes(16));
         $acquired = $this->redis->set($lockKey, $token, ['nx', 'ex' => 30]);
 
@@ -122,7 +123,9 @@ final class IdempotencySubscriber implements EventSubscriberInterface
 
         $request = $event->getRequest();
 
-        if (!$this->isCreateOrderRequest($request)) {
+        $scope = $this->scope($request);
+
+        if ($scope === null) {
             return;
         }
 
@@ -141,7 +144,7 @@ final class IdempotencySubscriber implements EventSubscriberInterface
             'body_hash' => $hash,
         ];
 
-        $item = $this->idempotencyCache->getItem($this->responseCacheKey($key));
+        $item = $this->idempotencyCache->getItem($this->responseCacheKey($scope, $key));
         $item->set($payload);
         $item->expiresAfter(86400);
         $this->idempotencyCache->save($item);
@@ -157,26 +160,53 @@ final class IdempotencySubscriber implements EventSubscriberInterface
 
         $request = $event->getRequest();
 
-        if (!$this->isCreateOrderRequest($request)) {
+        if ($this->scope($request) === null) {
             return;
         }
 
         $this->releaseLock($request);
     }
 
-    private function isCreateOrderRequest(Request $request): bool
+    private function scope(Request $request): ?string
     {
-        return $request->getMethod() === 'POST' && $request->getPathInfo() === '/orders';
+        if ($request->getMethod() !== 'POST') {
+            return null;
+        }
+
+        $route = $request->attributes->get('_route');
+
+        if (!is_string($route) || $route === '') {
+            return null;
+        }
+
+        return match ($route) {
+            'orders_create' => 'orders.create',
+            'orders_confirm_payment' => $this->scopedOrderRoute('orders.confirm_payment', $request),
+            'orders_cancel' => $this->scopedOrderRoute('orders.cancel', $request),
+            'orders_refund' => $this->scopedOrderRoute('orders.refund', $request),
+            default => null,
+        };
     }
 
-    private function responseCacheKey(string $key): string
+    private function scopedOrderRoute(string $prefix, Request $request): ?string
     {
-        return 'idempotency.orders.create.' . $key;
+        $id = $request->attributes->get('id');
+
+        if (!is_string($id) || $id === '') {
+            return null;
+        }
+
+        return $prefix . ':' . $id;
     }
 
-    private function lockKey(string $key): string
+    private function responseCacheKey(string $scope, string $key): string
     {
-        return 'idempotency:lock:orders:create:' . $key;
+        return 'idem_' . hash('sha256', $scope . '|' . $key);
+    }
+
+    private function lockKey(string $scope, string $key): string
+    {
+        return 'idempotency:lock:' . hash('sha256', $scope . '|' . $key);
     }
 
     private function releaseLock(Request $request): void
