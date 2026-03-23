@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace App\Domain\Order;
 
-use Symfony\Component\Uid\Uuid;
+use Ramsey\Uuid\Uuid;
+use Ramsey\Uuid\UuidInterface;
 
 final readonly class OrderId
 {
-    private function __construct(public Uuid $value)
+    private function __construct(public UuidInterface $value)
     {
     }
 
     public static function new(): self
     {
-        return new self(Uuid::v7());
+        return new self(Uuid::uuid7());
     }
 
     public static function fromString(string $value): self
@@ -24,6 +25,6 @@ final readonly class OrderId
 
     public function toString(): string
     {
-        return $this->value->toRfc4122();
+        return $this->value->toString();
     }
 }
