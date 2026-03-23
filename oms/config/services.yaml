@@ -24,5 +24,14 @@ services:
     App\Application\Contract\OrderQueryRepository: '@App\Infrastructure\Persistence\Doctrine\DoctrineOrderQueryRepository'
     App\Application\Contract\TransactionManager: '@App\Infrastructure\Persistence\Doctrine\DoctrineTransactionManager'
 
+    Redis:
+        factory: ['Symfony\\Component\\Cache\\Adapter\\RedisAdapter', 'createConnection']
+        arguments:
+            - '%env(resolve:REDIS_URL)%'
+
+    App\Interfaces\Http\EventSubscriber\IdempotencySubscriber:
+        arguments:
+            $idempotencyCache: '@cache.idempotency'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

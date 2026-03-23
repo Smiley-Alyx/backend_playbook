@@ -14,6 +14,7 @@ services:
       context: ./docker/php
     environment:
       APP_ENV: dev
+      REDIS_URL: redis://redis:6379
     volumes:
       - ./oms:/var/www/html
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zz-oms.ini:ro
@@ -28,6 +29,7 @@ services:
     command: ["php", "bin/console", "messenger:consume", "async", "--time-limit=3600", "--memory-limit=128M"]
     environment:
       APP_ENV: dev
+      REDIS_URL: redis://redis:6379
     volumes:
       - ./oms:/var/www/html
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/zz-oms.ini:ro
