@@ -20,18 +20,28 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\Interfaces\Http\Controller\:
+        resource: '../src/Interfaces/Http/Controller/'
+        public: true
+        tags: ['controller.service_arguments']
+
     App\Application\Contract\OrderRepository: '@App\Infrastructure\Persistence\Doctrine\DoctrineOrderRepository'
     App\Application\Contract\OrderQueryRepository: '@App\Infrastructure\Persistence\Doctrine\DoctrineOrderQueryRepository'
     App\Application\Contract\TransactionManager: '@App\Infrastructure\Persistence\Doctrine\DoctrineTransactionManager'
 
     Redis:
-        factory: ['Symfony\\Component\\Cache\\Adapter\\RedisAdapter', 'createConnection']
+        class: Redis
+        factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
         arguments:
             - '%env(resolve:REDIS_URL)%'
 
     App\Interfaces\Http\EventSubscriber\IdempotencySubscriber:
         arguments:
             $idempotencyCache: '@cache.idempotency'
+
+    App\Interfaces\Http\EventSubscriber\ApiExceptionSubscriber:
+        arguments:
+            $logger: '@monolog.logger.api'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

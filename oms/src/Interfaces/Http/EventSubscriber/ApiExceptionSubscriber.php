@@ -9,6 +9,7 @@ use App\Domain\Order\Exception\InvalidOrderAmount;
 use App\Domain\Order\Exception\InvalidOrderCurrency;
 use App\Domain\Order\Exception\InvalidOrderTransition;
 use Ramsey\Uuid\Exception\InvalidUuidStringException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,6 +19,10 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 final class ApiExceptionSubscriber implements EventSubscriberInterface
 {
+    public function __construct(private readonly LoggerInterface $logger)
+    {
+    }
+
     public static function getSubscribedEvents(): array
     {
         return [KernelEvents::EXCEPTION => 'onException'];
@@ -58,6 +63,11 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
             $status = $e->getStatusCode();
             $code = 'HTTP_ERROR';
             $message = $e->getMessage() !== '' ? $e->getMessage() : Response::$statusTexts[$status] ?? 'HTTP error';
+        } else {
+            $this->logger->error('Unhandled exception', [
+                'exception' => $e,
+                'request_id' => is_string($requestId) ? $requestId : null,
+            ]);
         }
 
         $payload = [
