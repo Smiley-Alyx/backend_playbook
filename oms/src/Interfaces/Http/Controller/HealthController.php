@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Interfaces\Http\Controller;
 
 use Doctrine\DBAL\Connection;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -16,6 +17,15 @@ final readonly class HealthController
     }
 
     #[Route('/health', name: 'health', methods: ['GET'])]
+    #[OA\Get(
+        path: '/health',
+        tags: ['System'],
+        summary: 'Health check',
+        responses: [
+            new OA\Response(response: 200, description: 'OK'),
+            new OA\Response(response: 503, description: 'Degraded'),
+        ],
+    )]
     public function __invoke(): JsonResponse
     {
         $dbOk = false;

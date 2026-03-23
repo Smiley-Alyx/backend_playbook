@@ -1,0 +1,10 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Order Management Service
+            version: 1.0.0
+    areas:
+        default:
+            path_patterns:
+                - ^/orders
+                - ^/health

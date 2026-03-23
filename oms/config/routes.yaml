@@ -3,3 +3,18 @@ controllers:
         path: ../src/Interfaces/Http/Controller/
         namespace: App\Interfaces\Http\Controller
     type: attribute
+
+nelmio_api_doc:
+    resource: '@NelmioApiDocBundle/config/routing/swaggerui.php'
+    type: php
+    prefix: /api/docs
+
+nelmio_api_doc_json:
+    path: /api/docs.json
+    controller: nelmio_api_doc.controller.swagger_json
+    methods: [GET]
+
+nelmio_api_doc_yaml:
+    path: /api/docs.yaml
+    controller: nelmio_api_doc.controller.swagger_yaml
+    methods: [GET]

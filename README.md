@@ -35,6 +35,13 @@ The service is designed around production constraints:
 - `POST /orders/{id}/refund`
 - `GET /health`
 
+### OpenAPI / Swagger
+
+- Swagger UI: `http://localhost:8080/api/docs/`
+- OpenAPI JSON: `http://localhost:8080/api/docs.json`
+
+![Swagger UI](docs/swagger.png)
+
 ## Local run (Docker)
 
 ```bash
