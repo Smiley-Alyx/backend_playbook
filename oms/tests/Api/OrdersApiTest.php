@@ -26,6 +26,7 @@ final class OrdersApiTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(201);
+        self::assertResponseHasHeader('X-Request-Id');
 
         $first = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertIsArray($first);
@@ -49,6 +50,7 @@ final class OrdersApiTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(201);
+        self::assertResponseHasHeader('X-Request-Id');
 
         $second = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertIsArray($second);
@@ -60,6 +62,47 @@ final class OrdersApiTest extends WebTestCase
         self::assertIsString($id2Raw);
         $id2 = $id2Raw;
         self::assertSame($id1, $id2);
+    }
+
+    public function testIdempotencyKeyReuseWithDifferentPayloadReturnsConflict(): void
+    {
+        $client = static::createClient();
+
+        $payload1 = json_encode(['amount_minor' => 1111, 'currency' => 'usd'], JSON_THROW_ON_ERROR);
+        $client->request('POST', '/orders', server: ['CONTENT_TYPE' => 'application/json', 'HTTP_IDEMPOTENCY_KEY' => 'phpunit-key-mismatch'], content: $payload1);
+        self::assertResponseStatusCodeSame(201);
+
+        $payload2 = json_encode(['amount_minor' => 2222, 'currency' => 'usd'], JSON_THROW_ON_ERROR);
+        $client->request('POST', '/orders', server: ['CONTENT_TYPE' => 'application/json', 'HTTP_IDEMPOTENCY_KEY' => 'phpunit-key-mismatch'], content: $payload2);
+        self::assertResponseStatusCodeSame(409);
+
+        $error = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertIsArray($error);
+        self::assertArrayHasKey('error', $error);
+        self::assertIsArray($error['error']);
+    }
+
+    public function testIdempotencyRequestInProgressReturnsConflict(): void
+    {
+        $client = static::createClient();
+
+        $key = 'phpunit-key-in-progress';
+        $lockKey = 'idempotency:lock:' . hash('sha256', 'orders.create' . '|' . $key);
+
+        $container = static::getContainer();
+        $redis = $container->get('Redis');
+        self::assertInstanceOf(\Redis::class, $redis);
+
+        $redis->set($lockKey, 'token', ['ex' => 30]);
+
+        $payload = json_encode(['amount_minor' => 3333, 'currency' => 'usd'], JSON_THROW_ON_ERROR);
+        $client->request('POST', '/orders', server: ['CONTENT_TYPE' => 'application/json', 'HTTP_IDEMPOTENCY_KEY' => $key], content: $payload);
+        self::assertResponseStatusCodeSame(409);
+
+        $error = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertIsArray($error);
+        self::assertArrayHasKey('error', $error);
+        self::assertIsArray($error['error']);
     }
 
     public function testListOrdersPaginationAndMeta(): void
