@@ -16,6 +16,7 @@ use App\Application\UseCase\ListOrders\ListOrders;
 use App\Application\UseCase\ListOrders\ListOrdersRequest;
 use App\Application\UseCase\RefundOrder\RefundOrder;
 use App\Application\UseCase\RefundOrder\RefundOrderRequest;
+use App\Domain\Order\OrderStatus;
 use App\Interfaces\Http\Exception\ValidationFailedHttpException;
 use DateTimeImmutable;
 use JsonException;
@@ -213,14 +214,24 @@ final readonly class OrdersController
     {
         $page = (int) $request->query->get('page', 1);
         $perPage = (int) $request->query->get('per_page', 20);
-        $status = $request->query->get('status');
+
+        $statusRaw = $request->query->get('status');
+        $status = null;
+        if (is_string($statusRaw)) {
+            $statusRaw = trim($statusRaw);
+            $status = $statusRaw !== '' ? $statusRaw : null;
+        }
+
+        $allowedStatuses = array_map(static fn (OrderStatus $s): string => $s->value, OrderStatus::cases());
 
         $violations = $this->validator->validate([
             'page' => $page,
             'per_page' => $perPage,
+            'status' => $status,
         ], new Assert\Collection([
             'page' => [new Assert\Required(), new Assert\Type('integer'), new Assert\Positive()],
             'per_page' => [new Assert\Required(), new Assert\Type('integer'), new Assert\Range(['min' => 1, 'max' => 100])],
+            'status' => new Assert\Optional([new Assert\Type('string'), new Assert\Choice($allowedStatuses)]),
         ], allowExtraFields: true));
 
         if ($violations->count() > 0) {
@@ -230,7 +241,7 @@ final readonly class OrdersController
         $result = $this->listOrders->execute(new ListOrdersRequest(
             page: $page,
             perPage: $perPage,
-            status: is_string($status) ? $status : null,
+            status: $status,
         ));
 
         $totalPages = (int) ceil($result->result->total / $result->result->perPage);

@@ -61,4 +61,68 @@ final class OrdersApiTest extends WebTestCase
         $id2 = $id2Raw;
         self::assertSame($id1, $id2);
     }
+
+    public function testListOrdersPaginationAndMeta(): void
+    {
+        $client = static::createClient();
+
+        for ($i = 0; $i < 3; $i++) {
+            $content = json_encode(['amount_minor' => 1000 + $i, 'currency' => 'usd'], JSON_THROW_ON_ERROR);
+            $client->request('POST', '/orders', server: ['CONTENT_TYPE' => 'application/json'], content: $content);
+            self::assertResponseStatusCodeSame(201);
+        }
+
+        $client->request('GET', '/orders?page=1&per_page=2');
+        self::assertResponseIsSuccessful();
+
+        $payload = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertIsArray($payload);
+
+        self::assertArrayHasKey('data', $payload);
+        self::assertIsArray($payload['data']);
+        self::assertCount(2, $payload['data']);
+
+        self::assertArrayHasKey('meta', $payload);
+        self::assertIsArray($payload['meta']);
+        self::assertSame(1, $payload['meta']['page'] ?? null);
+        self::assertSame(2, $payload['meta']['per_page'] ?? null);
+
+        $total = $payload['meta']['total'] ?? null;
+        self::assertIsInt($total);
+        self::assertGreaterThanOrEqual(3, $total);
+
+        $totalPages = $payload['meta']['total_pages'] ?? null;
+        self::assertIsInt($totalPages);
+        self::assertGreaterThanOrEqual(1, $totalPages);
+    }
+
+    public function testListOrdersStatusFilterAndValidationErrors(): void
+    {
+        $client = static::createClient();
+
+        $content = json_encode(['amount_minor' => 1234, 'currency' => 'usd'], JSON_THROW_ON_ERROR);
+        $client->request('POST', '/orders', server: ['CONTENT_TYPE' => 'application/json'], content: $content);
+        self::assertResponseStatusCodeSame(201);
+
+        $client->request('GET', '/orders?status=created');
+        self::assertResponseIsSuccessful();
+
+        $payload = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertIsArray($payload);
+        self::assertArrayHasKey('data', $payload);
+        self::assertIsArray($payload['data']);
+        self::assertNotEmpty($payload['data']);
+
+        $client->request('GET', '/orders?status=not-a-status');
+        self::assertResponseStatusCodeSame(422);
+
+        $error = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertIsArray($error);
+        self::assertArrayHasKey('error', $error);
+        self::assertIsArray($error['error']);
+        self::assertSame('VALIDATION_FAILED', $error['error']['code'] ?? null);
+
+        $client->request('GET', '/orders?per_page=1000');
+        self::assertResponseStatusCodeSame(422);
+    }
 }
