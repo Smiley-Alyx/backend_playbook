@@ -28,11 +28,19 @@ final class ApiAccessLogSubscriber implements EventSubscriberInterface
 
     public function onRequest(RequestEvent $event): void
     {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
         $event->getRequest()->attributes->set(self::STARTED_AT_ATTRIBUTE, microtime(true));
     }
 
     public function onResponse(ResponseEvent $event): void
     {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
         $request = $event->getRequest();
         $response = $event->getResponse();
 

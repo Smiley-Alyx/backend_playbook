@@ -25,6 +25,10 @@ final class RequestIdSubscriber implements EventSubscriberInterface
 
     public function onRequest(RequestEvent $event): void
     {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
         $request = $event->getRequest();
 
         $incoming = $request->headers->get(self::HEADER);
@@ -35,6 +39,10 @@ final class RequestIdSubscriber implements EventSubscriberInterface
 
     public function onResponse(ResponseEvent $event): void
     {
+        if (!$event->isMainRequest()) {
+            return;
+        }
+
         $request = $event->getRequest();
         $response = $event->getResponse();
 
