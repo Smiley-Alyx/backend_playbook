@@ -59,20 +59,41 @@ docker compose up --build
 - `src/Infrastructure` — DB/Redis/queue implementations
 - `src/Interfaces` — HTTP controllers, validation, response mapping
 
-## Milestones
+## Implemented features
 
-1. Baseline scaffold (Symfony + Docker)
-2. Layer boundaries + core interfaces
-3. Order domain model + unit tests
-4. Use cases (Create/Confirm/Cancel/Refund/Get/List)
-5. PostgreSQL persistence (Doctrine mappings + migrations)
-6. HTTP API + unified error format + pagination/filtering
-7. Idempotency storage and behavior
-8. Messenger async processing + retry strategy
-9. Observability (JSON logs, request IDs) + health checks
-10. OpenAPI spec (`openapi/`)
-11. PHPUnit + API integration tests + PHPStan max level
-12. Engineering docs (ADRs + failure scenarios + security/testing notes)
+- Layered architecture (Domain/Application/Infrastructure/Interfaces)
+- Order aggregate with explicit invariants and state transitions
+- Use-cases (Create/ConfirmPayment/Cancel/Refund/Get/List)
+- REST API endpoints:
+  - `POST /orders`
+  - `GET /orders/{id}`
+  - `GET /orders`
+  - `POST /orders/{id}/confirm-payment`
+  - `POST /orders/{id}/cancel`
+  - `POST /orders/{id}/refund`
+  - `GET /health`
+- Unified error envelope for all API errors (including validation)
+- OpenAPI documentation (Swagger UI + OpenAPI JSON)
+- Correlation via `X-Request-Id`
+- Structured JSON logs (dev) + HTTP access logs
+- Idempotency via `Idempotency-Key`
+- Async processing example with retries (Symfony Messenger + Redis)
+- Quality gates:
+  - PHPUnit tests
+  - PHPStan (max level)
+
+## Documentation
+
+- Architecture: `oms/docs/architecture.md`
+- API guidelines: `oms/docs/api-guidelines.md`
+- Observability: `oms/docs/observability.md`
+- Testing strategy: `oms/docs/testing-strategy.md`
+- Security: `oms/docs/security.md`
+- Failure scenarios: `oms/docs/failure-scenarios.md`
+- ADRs: `oms/docs/adr/`
+  - `oms/docs/adr/0001-unified-error-envelope.md`
+  - `oms/docs/adr/0002-request-id-and-structured-logging.md`
+  - `oms/docs/adr/0003-redis-for-idempotency-and-messenger-transport.md`
 
 ## License
 
