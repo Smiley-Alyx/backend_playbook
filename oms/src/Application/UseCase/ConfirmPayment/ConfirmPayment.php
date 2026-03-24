@@ -21,7 +21,7 @@ final readonly class ConfirmPayment
 
     public function execute(ConfirmPaymentRequest $request): ConfirmPaymentResponse
     {
-        return $this->tx->transactional(function () use ($request): ConfirmPaymentResponse {
+        $result = $this->tx->transactional(function () use ($request): ConfirmPaymentResponse {
             $id = OrderId::fromString($request->orderId);
             $order = $this->orders->get($id);
 
@@ -34,5 +34,11 @@ final readonly class ConfirmPayment
 
             return new ConfirmPaymentResponse($this->mapper->map($order));
         });
+
+        if (!$result instanceof ConfirmPaymentResponse) {
+            throw new \RuntimeException('Transaction returned invalid result');
+        }
+
+        return $result;
     }
 }

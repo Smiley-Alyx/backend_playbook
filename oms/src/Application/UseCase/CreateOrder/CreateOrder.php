@@ -21,7 +21,7 @@ final readonly class CreateOrder
 
     public function execute(CreateOrderRequest $request): CreateOrderResponse
     {
-        return $this->tx->transactional(function () use ($request): CreateOrderResponse {
+        $result = $this->tx->transactional(function () use ($request): CreateOrderResponse {
             $id = OrderId::new();
 
             $order = Order::create(
@@ -35,5 +35,11 @@ final readonly class CreateOrder
 
             return new CreateOrderResponse($this->mapper->map($order));
         });
+
+        if (!$result instanceof CreateOrderResponse) {
+            throw new \RuntimeException('Transaction returned invalid result');
+        }
+
+        return $result;
     }
 }

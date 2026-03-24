@@ -30,7 +30,8 @@ final class DispatchExampleJobCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $message = (string) $input->getArgument('message');
+        $arg = $input->getArgument('message');
+        $message = is_scalar($arg) ? (string) $arg : '';
 
         $this->bus->dispatch(new ExampleJob(message: $message, attempt: 0));
 

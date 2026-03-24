@@ -21,7 +21,7 @@ final readonly class CancelOrder
 
     public function execute(CancelOrderRequest $request): CancelOrderResponse
     {
-        return $this->tx->transactional(function () use ($request): CancelOrderResponse {
+        $result = $this->tx->transactional(function () use ($request): CancelOrderResponse {
             $id = OrderId::fromString($request->orderId);
             $order = $this->orders->get($id);
 
@@ -34,5 +34,11 @@ final readonly class CancelOrder
 
             return new CancelOrderResponse($this->mapper->map($order));
         });
+
+        if (!$result instanceof CancelOrderResponse) {
+            throw new \RuntimeException('Transaction returned invalid result');
+        }
+
+        return $result;
     }
 }

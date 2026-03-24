@@ -13,6 +13,7 @@ final class OrdersApiTest extends WebTestCase
         $client = static::createClient();
 
         $payload = ['amount_minor' => 1234, 'currency' => 'usd'];
+        $content = json_encode($payload, JSON_THROW_ON_ERROR);
 
         $client->request(
             method: 'POST',
@@ -21,7 +22,7 @@ final class OrdersApiTest extends WebTestCase
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_IDEMPOTENCY_KEY' => 'phpunit-key-1',
             ],
-            content: json_encode($payload),
+            content: $content,
         );
 
         self::assertResponseStatusCodeSame(201);
@@ -32,7 +33,9 @@ final class OrdersApiTest extends WebTestCase
         self::assertIsArray($first['data']);
         self::assertArrayHasKey('id', $first['data']);
 
-        $id1 = (string) $first['data']['id'];
+        $id1Raw = $first['data']['id'];
+        self::assertIsString($id1Raw);
+        $id1 = $id1Raw;
         self::assertNotSame('', $id1);
 
         $client->request(
@@ -42,7 +45,7 @@ final class OrdersApiTest extends WebTestCase
                 'CONTENT_TYPE' => 'application/json',
                 'HTTP_IDEMPOTENCY_KEY' => 'phpunit-key-1',
             ],
-            content: json_encode($payload),
+            content: $content,
         );
 
         self::assertResponseStatusCodeSame(201);
@@ -53,7 +56,9 @@ final class OrdersApiTest extends WebTestCase
         self::assertIsArray($second['data']);
         self::assertArrayHasKey('id', $second['data']);
 
-        $id2 = (string) $second['data']['id'];
+        $id2Raw = $second['data']['id'];
+        self::assertIsString($id2Raw);
+        $id2 = $id2Raw;
         self::assertSame($id1, $id2);
     }
 }

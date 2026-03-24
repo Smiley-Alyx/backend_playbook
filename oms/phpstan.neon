@@ -1,0 +1,14 @@
+parameters:
+  level: max
+  paths:
+    - src
+    - tests
+  bootstrapFiles:
+    - vendor/autoload.php
+  parallel:
+    maximumNumberOfProcesses: 4
+  tmpDir: var/cache/phpstan
+  excludePaths:
+    analyse:
+      - var
+      - vendor

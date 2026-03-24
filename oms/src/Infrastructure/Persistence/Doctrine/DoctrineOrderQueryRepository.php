@@ -41,10 +41,18 @@ final readonly class DoctrineOrderQueryRepository implements OrderQueryRepositor
         $qb->setFirstResult(($page - 1) * $perPage)
             ->setMaxResults($perPage);
 
-        $items = array_map(
-            fn (OrderRecord $record): OrderView => $this->toView($record),
-            $qb->getQuery()->getResult(),
-        );
+        $result = $qb->getQuery()->getResult();
+
+        $items = [];
+        if (is_iterable($result)) {
+            foreach ($result as $record) {
+                if (!$record instanceof OrderRecord) {
+                    continue;
+                }
+
+                $items[] = $this->toView($record);
+            }
+        }
 
         $countQb = $this->indexQuery->build($query);
         $countQb->resetDQLPart('orderBy');

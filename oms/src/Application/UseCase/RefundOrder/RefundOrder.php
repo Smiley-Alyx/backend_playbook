@@ -21,7 +21,7 @@ final readonly class RefundOrder
 
     public function execute(RefundOrderRequest $request): RefundOrderResponse
     {
-        return $this->tx->transactional(function () use ($request): RefundOrderResponse {
+        $result = $this->tx->transactional(function () use ($request): RefundOrderResponse {
             $id = OrderId::fromString($request->orderId);
             $order = $this->orders->get($id);
 
@@ -34,5 +34,11 @@ final readonly class RefundOrder
 
             return new RefundOrderResponse($this->mapper->map($order));
         });
+
+        if (!$result instanceof RefundOrderResponse) {
+            throw new \RuntimeException('Transaction returned invalid result');
+        }
+
+        return $result;
     }
 }

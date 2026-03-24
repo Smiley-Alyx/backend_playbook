@@ -26,6 +26,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\ConstraintViolationInterface;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final readonly class OrdersController
@@ -102,9 +104,16 @@ final readonly class OrdersController
             $this->validationError($violations);
         }
 
+        $amountMinor = $payload['amount_minor'] ?? null;
+        $currency = $payload['currency'] ?? null;
+
+        if (!is_int($amountMinor) || !is_string($currency)) {
+            throw new BadRequestHttpException('Invalid JSON');
+        }
+
         $result = $this->createOrder->execute(new CreateOrderRequest(
-            amountMinor: (int) $payload['amount_minor'],
-            currency: (string) $payload['currency'],
+            amountMinor: $amountMinor,
+            currency: $currency,
             now: new DateTimeImmutable(),
         ));
 
@@ -336,6 +345,9 @@ final readonly class OrdersController
         return new JsonResponse(['data' => $result->order], Response::HTTP_OK);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function decodeJson(Request $request): array
     {
         $raw = (string) $request->getContent();
@@ -357,11 +369,15 @@ final readonly class OrdersController
         return $decoded;
     }
 
-    private function validationError($violations): void
+    private function validationError(ConstraintViolationListInterface $violations): void
     {
         $errors = [];
 
         foreach ($violations as $violation) {
+            if (!$violation instanceof ConstraintViolationInterface) {
+                continue;
+            }
+
             $field = $this->normalizeViolationPath((string) $violation->getPropertyPath());
 
             $errors[] = [
