@@ -1,3 +1,5 @@
+FROM composer:2 AS composer
+
 FROM php:8.3-fpm-alpine
 
 RUN set -eux; \
@@ -12,5 +14,7 @@ RUN set -eux; \
     pecl install redis; \
     docker-php-ext-enable redis; \
     apk del --no-network $PHPIZE_DEPS
+
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 
 WORKDIR /var/www/html
