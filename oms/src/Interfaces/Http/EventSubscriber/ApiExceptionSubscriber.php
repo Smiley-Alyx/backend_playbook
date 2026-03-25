@@ -8,6 +8,8 @@ use App\Application\Exception\OrderNotFound;
 use App\Domain\Order\Exception\InvalidOrderAmount;
 use App\Domain\Order\Exception\InvalidOrderCurrency;
 use App\Domain\Order\Exception\InvalidOrderTransition;
+use App\Interfaces\Http\Exception\IdempotencyKeyConflictHttpException;
+use App\Interfaces\Http\Exception\IdempotencyRequestInProgressHttpException;
 use App\Interfaces\Http\Exception\ValidationFailedHttpException;
 use Ramsey\Uuid\Exception\InvalidUuidStringException;
 use Psr\Log\LoggerInterface;
@@ -66,6 +68,14 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
             $code = 'VALIDATION_FAILED';
             $message = $e->getMessage();
             $details = $e->details();
+        } elseif ($e instanceof IdempotencyKeyConflictHttpException) {
+            $status = Response::HTTP_CONFLICT;
+            $code = 'IDEMPOTENCY_KEY_CONFLICT';
+            $message = $e->getMessage();
+        } elseif ($e instanceof IdempotencyRequestInProgressHttpException) {
+            $status = Response::HTTP_CONFLICT;
+            $code = 'IDEMPOTENCY_REQUEST_IN_PROGRESS';
+            $message = $e->getMessage();
         } elseif ($e instanceof HttpExceptionInterface) {
             $status = $e->getStatusCode();
             $code = 'HTTP_ERROR';

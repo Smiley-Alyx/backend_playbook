@@ -80,6 +80,7 @@ final class OrdersApiTest extends WebTestCase
         self::assertIsArray($error);
         self::assertArrayHasKey('error', $error);
         self::assertIsArray($error['error']);
+        self::assertSame('IDEMPOTENCY_KEY_CONFLICT', $error['error']['code'] ?? null);
     }
 
     public function testIdempotencyRequestInProgressReturnsConflict(): void
@@ -103,6 +104,7 @@ final class OrdersApiTest extends WebTestCase
         self::assertIsArray($error);
         self::assertArrayHasKey('error', $error);
         self::assertIsArray($error['error']);
+        self::assertSame('IDEMPOTENCY_REQUEST_IN_PROGRESS', $error['error']['code'] ?? null);
     }
 
     public function testListOrdersPaginationAndMeta(): void

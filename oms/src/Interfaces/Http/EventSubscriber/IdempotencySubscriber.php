@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Interfaces\Http\EventSubscriber;
 
+use App\Interfaces\Http\Exception\IdempotencyKeyConflictHttpException;
+use App\Interfaces\Http\Exception\IdempotencyRequestInProgressHttpException;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,7 +14,6 @@ use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 final class IdempotencySubscriber implements EventSubscriberInterface
@@ -80,7 +81,7 @@ final class IdempotencySubscriber implements EventSubscriberInterface
             }
 
             if (!hash_equals($cachedHash, $bodyHash)) {
-                throw new ConflictHttpException('Idempotency key reuse with different payload');
+                throw new IdempotencyKeyConflictHttpException('Idempotency key reuse with different payload');
             }
 
             $status = (int) ($cached['status'] ?? 200);
@@ -106,7 +107,7 @@ final class IdempotencySubscriber implements EventSubscriberInterface
         $acquired = $this->redis->set($lockKey, $token, ['nx', 'ex' => 30]);
 
         if ($acquired !== true) {
-            throw new ConflictHttpException('Idempotency request in progress');
+            throw new IdempotencyRequestInProgressHttpException('Idempotency request in progress');
         }
 
         $request->attributes->set(self::ATTR_KEY, $key);
