@@ -72,3 +72,7 @@ final class ValidationErrorObject
 final class ValidationErrorResponse
 {
 }
+
+final class ErrorSchemas
+{
+}
