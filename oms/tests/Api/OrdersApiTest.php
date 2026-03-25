@@ -91,10 +91,10 @@ final class OrdersApiTest extends WebTestCase
         $lockKey = 'idempotency:lock:' . hash('sha256', 'orders.create' . '|' . $key);
 
         $container = static::getContainer();
-        $redis = $container->get('Redis');
-        self::assertInstanceOf(\Redis::class, $redis);
+        $redis = $container->get(\App\Infrastructure\Redis\RedisClient::class);
+        self::assertInstanceOf(\App\Infrastructure\Redis\RedisClient::class, $redis);
 
-        $redis->set($lockKey, 'token', ['ex' => 30]);
+        $redis->set($lockKey, 'token', 30);
 
         $payload = json_encode(['amount_minor' => 3333, 'currency' => 'usd'], JSON_THROW_ON_ERROR);
         $client->request('POST', '/orders', server: ['CONTENT_TYPE' => 'application/json', 'HTTP_IDEMPOTENCY_KEY' => $key], content: $payload);

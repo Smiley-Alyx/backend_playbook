@@ -6,6 +6,7 @@ namespace App\Interfaces\Http\EventSubscriber;
 
 use App\Interfaces\Http\Exception\IdempotencyKeyConflictHttpException;
 use App\Interfaces\Http\Exception\IdempotencyRequestInProgressHttpException;
+use App\Infrastructure\Redis\RedisClient;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -26,7 +27,7 @@ final class IdempotencySubscriber implements EventSubscriberInterface
 
     public function __construct(
         private readonly CacheItemPoolInterface $idempotencyCache,
-        private readonly \Redis $redis,
+        private readonly RedisClient $redis,
     ) {
     }
 
@@ -104,7 +105,7 @@ final class IdempotencySubscriber implements EventSubscriberInterface
 
         $lockKey = $this->lockKey($scope, $key);
         $token = bin2hex(random_bytes(16));
-        $acquired = $this->redis->set($lockKey, $token, ['nx', 'ex' => 30]);
+        $acquired = $this->redis->setNxEx($lockKey, $token, 30);
 
         if ($acquired !== true) {
             throw new IdempotencyRequestInProgressHttpException('Idempotency request in progress');

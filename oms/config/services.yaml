@@ -29,15 +29,30 @@ services:
     App\Application\Contract\OrderQueryRepository: '@App\Infrastructure\Persistence\Doctrine\DoctrineOrderQueryRepository'
     App\Application\Contract\TransactionManager: '@App\Infrastructure\Persistence\Doctrine\DoctrineTransactionManager'
 
-    Redis:
+    redis.connection:
         class: Redis
         factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
         arguments:
             - '%env(resolve:REDIS_URL)%'
 
+    app.redis_client:
+        class: App\Infrastructure\Redis\ExtRedisClient
+        arguments:
+            - '@redis.connection'
+        public: true
+
+    App\Infrastructure\Redis\RedisClient:
+        alias: app.redis_client
+        public: true
+
     App\Interfaces\Http\EventSubscriber\IdempotencySubscriber:
         arguments:
             $idempotencyCache: '@cache.idempotency'
+            $redis: '@App\Infrastructure\Redis\RedisClient'
+
+    App\Infrastructure\Queue\Handler\ExampleJobHandler:
+        arguments:
+            $redis: '@App\Infrastructure\Redis\RedisClient'
 
     App\Interfaces\Http\EventSubscriber\ApiExceptionSubscriber:
         arguments:

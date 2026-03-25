@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Queue\Handler;
 
+use App\Infrastructure\Redis\RedisClient;
 use App\Infrastructure\Queue\Message\ExampleJob;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -13,7 +14,7 @@ final readonly class ExampleJobHandler
 {
     public function __construct(
         private LoggerInterface $logger,
-        private \Redis $redis,
+        private RedisClient $redis,
     )
     {
     }
